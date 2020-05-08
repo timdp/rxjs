@@ -4,7 +4,7 @@ import { ColdObservable } from '../../../src/internal/testing/ColdObservable';
 export interface TestStream {
   messages: TestMessage[];
   cold?: ColdObservable<any>;
-  subscription?: {
+  subscription: {
     start: number;
     end: string | number;
   };

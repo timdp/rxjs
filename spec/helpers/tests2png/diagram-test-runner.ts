@@ -1,4 +1,4 @@
-import { painter } from './painter';
+import { init, dispose, paint } from './painter';
 import { TestScheduler } from 'rxjs/testing';
 import { TestMessage } from '../../../src/internal/testing/TestMessage';
 import { TestStream } from './types';
@@ -70,6 +70,29 @@ function makeFilename(operatorLabel: string) {
 type glitFn = (description: string, fn: () => void ) => any;
 type specFn = () => any;
 
+const initializing = init();
+let active = 0;
+
+async function paintWhenReady(inputStreams: TestStream[], operatorLabel: string, outputStreams: TestStream[], filename: string) {
+  let screenshotter: any;
+  try {
+    screenshotter = await initializing;
+  } catch (err) {
+    console.error(`Failed to initialize screenshotter: ${err}`);
+    return;
+  }
+  try {
+    await paint(inputStreams, operatorLabel, outputStreams, filename, screenshotter);
+    console.info(`Painted ${filename}`);
+  } catch (err) {
+    console.error(`Failed to paint ${filename}: ${err}`);
+  }
+  if (--active === 0) {
+    console.info('Disposing screenshotter');
+    await dispose(screenshotter);
+  }
+}
+
 global.asDiagram = function asDiagram(operatorLabel: string, glit: glitFn) {
   return function specFnWithPainter(description: string, specFn: specFn) {
     if (specFn.length === 0) {
@@ -94,8 +117,8 @@ global.asDiagram = function asDiagram(operatorLabel: string, glit: glitFn) {
         global.rxTestScheduler.flush();
         inputStreams = updateInputStreamsPostFlush(inputStreams);
         let filename = './docs_app/content/img/' + makeFilename(operatorLabel);
-        painter(inputStreams, operatorLabel, outputStreams, filename);
-        console.log('Painted ' + filename);
+        ++active;
+        paintWhenReady(inputStreams, operatorLabel, outputStreams, filename);
       });
     } else {
       throw new Error('cannot generate PNG marble diagram for async test ' + description);
