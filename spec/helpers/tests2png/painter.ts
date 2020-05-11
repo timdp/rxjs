@@ -3,7 +3,7 @@ import { cloneDeep, isEqual} from 'lodash';
 // @ts-ignore
 import { drawMarbleDiagram } from 'swirly-renderer-node';
 // @ts-ignore
-import { createHtml, Screenshotter } from 'swirly-rasterizer-puppeteer';
+import { SvgScreenshotter } from 'swirly-rasterizer-puppeteer';
 import { writeFileSync } from 'fs';
 import { TestMessage } from '../../../src/internal/testing/TestMessage';
 import { MarbleContent, TestStream } from './types';
@@ -184,7 +184,7 @@ function drawOperator(label: string) {
 }
 
 export async function init() {
-  const screenshotter: any = new Screenshotter();
+  const screenshotter: any = new SvgScreenshotter();
   await screenshotter.init();
   return screenshotter;
 }
@@ -218,7 +218,6 @@ export async function paint(inputStreams: TestStream[], operatorLabel: string, o
   const scaledWidth = Math.round(width * SCALE);
   const scaledHeight = Math.round(height * SCALE);
 
-  const html = createHtml(xml, scaledWidth, scaledHeight);
-  const imageData = await screenshotter.capture(html, scaledWidth, scaledHeight);
+  const imageData = await screenshotter.capture(xml, scaledWidth, scaledHeight);
   writeFileSync(filename, imageData, 'utf8');
 }
